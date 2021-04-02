@@ -9,6 +9,6 @@ public class Main {
   public static void main(String[] args) {
     int n = Utils.add(3, 4);
     int m = Utils.sum(ImmutableList.of(1, 2, 3, 4));
-    System.out.println(n);
+    System.out.printf("%d, %d\n", n, m);
   }
 }

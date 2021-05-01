@@ -15,9 +15,14 @@ import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.PostingsEnum;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.BytesRef;
@@ -61,10 +66,14 @@ public class TestLucene {
     var config = new IndexWriterConfig();
     Directory outputDir = new MMapDirectory(INDEX_DIR);
     try (var writer = new IndexWriter(outputDir, config)) {
+      // writer.deleteDocuments(new Term("id", "001"));
       writer.addDocument(DOC1);
       writer.addDocument(DOC2);
       writer.addDocument(DOC3);
       writer.flush();
+
+      // merge segment
+      // writer.forceMerge(1);
     }
   }
 
@@ -75,21 +84,31 @@ public class TestLucene {
       System.out.printf("IndexReader: %s\n", reader);
       for (LeafReaderContext ctx: reader.leaves()) {
         LeafReader leafReader = ctx.reader();
-        System.out.printf("LeafReader: %s\n", leafReader);
+        System.out.println("==========================");
+        dumpLeafIndex(leafReader);
       }
-
-      LeafReader lastLeafReader = reader.leaves().get(reader.leaves().size() - 1).reader();
-      dumpLeafIndex(lastLeafReader);
     }
   }
 
   @Test
-  public void testIndexSearcher() {
-
+  public void testIndexSearcher() throws IOException {
+    Directory indexDir = new MMapDirectory(INDEX_DIR);
+    try (IndexReader reader = DirectoryReader.open(indexDir)) {
+      IndexSearcher searcher = new IndexSearcher(reader);
+      Query query = new TermQuery(new Term("name", "jack"));
+      System.out.printf("Search with query: %s\n", query);
+      TopDocs topDocs = searcher.search(query, 10);
+      System.out.printf("total hit: %d\n", topDocs.totalHits);
+      for (var doc: topDocs.scoreDocs) {
+        System.out.printf("\t doc: %d, score: %f\n", doc.doc, doc.score);
+      }
+    }
   }
 
   private void dumpLeafIndex(LeafReader leafReader) throws IOException {
     List<String> fields = new ArrayList<>();
+
+    System.out.printf("Dump of leaf reader: %s\n", leafReader);
     leafReader.getFieldInfos().forEach((FieldInfo fi) -> {
       System.out.printf("Field: %s, hasPayload: %s\n", fi.name, fi.hasPayloads());
       fields.add(fi.name);

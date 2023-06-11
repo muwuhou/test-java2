@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.CodecReader;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.DocValuesType;
@@ -167,13 +168,14 @@ public class TestLucene {
 
   @Test
   public void testIndexReader() throws IOException {
-    Directory indexDir = new MMapDirectory(INDEX_DIR);
+    Path myIndex = Paths.get("/var/folders/rm/9s5259y15pl7yyy9n87y57rc000tcg/T/galeneTest.tmp/IndexGenTest2520952703987626984/testIndexGenWithBuffers/out_2023-02-16-20/index/i000/base/index");
+    Directory indexDir = new MMapDirectory(myIndex);
     try (DirectoryReader reader = DirectoryReader.open(indexDir)) {
       System.out.printf("DirectoryReader: %s\n", reader);
       for (LeafReaderContext ctx: reader.leaves()) {
         LeafReader leafReader = ctx.reader();
         System.out.println("==========================");
-        dumpLeafIndex(leafReader, false, true);
+        dumpLeafIndex(leafReader, true, true);
       }
     }
   }
@@ -196,6 +198,7 @@ public class TestLucene {
   private void dumpLeafIndex(LeafReader leafReader, boolean showInvertedFields, boolean showDocValuesFields) throws IOException {
     List<String> invFields = new ArrayList<>();
     List<String> numericDocValuesFields = new ArrayList<>();
+    List<String> binaryDocValuesFields = new ArrayList<>();
 
     System.out.printf("LeafReader: %s\n", leafReader);
     leafReader.getFieldInfos().forEach((FieldInfo fi) -> {
@@ -207,11 +210,19 @@ public class TestLucene {
       if (fi.getDocValuesType() == DocValuesType.NUMERIC) {
         numericDocValuesFields.add(fi.name);
       }
+      if (fi.getDocValuesType() == DocValuesType.BINARY) {
+        binaryDocValuesFields.add(fi.name);
+      }
     });
 
     if (showInvertedFields) {
+      System.out.println("================= inverted fields dump ==============");
       for (String field : invFields) {
         Terms terms = leafReader.terms(field);
+        if (terms == null) {
+          System.out.printf("No terms found for field %s\n", field);
+          continue;
+        }
         System.out.printf("Field %s has %s terms:\n", field, terms.size());
         TermsEnum termsEnum = terms.iterator();
         BytesRef bytesRef = termsEnum.next();
@@ -224,22 +235,48 @@ public class TestLucene {
     }
 
     if (showDocValuesFields) {
+      System.out.println("================= numericDocValues fields dump ==============");
       for (String ndvField : numericDocValuesFields) {
         NumericDocValues numericDocValues = leafReader.getNumericDocValues(ndvField);
         for (int i = 0; i < leafReader.maxDoc(); ++i) {
           boolean success = numericDocValues.advanceExact(i);
-          assert success;
-          System.out.printf("Doc: %d, %s = %d\n", i, ndvField, numericDocValues.longValue());
+          if (success) {
+            System.out.printf("Doc: %d, %s = %d\n", i, ndvField, numericDocValues.longValue());
+          } else {
+            System.out.printf("Doc: %d, %s = %s\n", i, ndvField, "<MISSING>");
+          }
+        }
+      }
+    }
+
+    if (showDocValuesFields) {
+      System.out.println("================= binaryDocValues fields dump ==============");
+      for (String bdvField: binaryDocValuesFields) {
+        BinaryDocValues docValues = leafReader.getBinaryDocValues(bdvField);
+        for (int i = 0; i < leafReader.maxDoc(); ++i) {
+          boolean success = docValues.advanceExact(i);
+          if (success) {
+            System.out.printf("Doc: %d, %s = %s\n", i, bdvField, docValues.binaryValue());
+          } else {
+            System.out.printf("Doc: %d, %s = %s\n", i, bdvField, "<MISSING>");
+          }
         }
       }
     }
   }
 
-  private List<Integer> dumpPostingList(PostingsEnum postingList) throws IOException {
+  private List<String> dumpPostingList(PostingsEnum postingList) throws IOException {
     int docId = postingList.nextDoc();
-    List<Integer> result = new ArrayList<>();
+    List<String> result = new ArrayList<>();
     while (docId != DocIdSetIterator.NO_MORE_DOCS) {
-      result.add(docId);
+      int freq = postingList.freq();
+      String msg;
+      if (freq > 1) {
+        msg = String.format("%d[%d]", docId, freq);
+      } else {
+        msg = String.format("%d", docId);
+      }
+      result.add(msg);
       docId = postingList.nextDoc();
     }
     return result;

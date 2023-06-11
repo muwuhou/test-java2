@@ -2,11 +2,11 @@
   <library name="org.apache.lucene:lucene-core:7.4.0" type="repository">
     <properties maven-id="org.apache.lucene:lucene-core:7.4.0" />
     <CLASSES>
-      <root url="jar://$USER_HOME$/.m2/repository/org/apache/lucene/lucene-core/7.4.0/lucene-core-7.4.0.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/lucene/lucene-core/7.4.0/lucene-core-7.4.0.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$USER_HOME$/.ideaLibSources/lucene-core-7.4.0-sources.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/lucene/lucene-core/7.4.0/lucene-core-7.4.0-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

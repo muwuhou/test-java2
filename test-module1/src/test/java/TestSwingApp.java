@@ -65,6 +65,7 @@ public class TestSwingApp {
 
     @Override
     protected void paintComponent(Graphics g) {
+      super.paintComponent(g);
       int hi = getSize().height;
       int wi = getSize().width;
       g.setColor(Color.BLUE);

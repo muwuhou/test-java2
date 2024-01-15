@@ -1,6 +1,4 @@
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Random;
@@ -19,26 +17,27 @@ public class TestSwingApp {
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setSize(500, 300);
 
-    JPanel panel1 = new JPanel();
+    JPanel bottomPane = new JPanel();
+    // Default LayoutManager for JPanel is FlowLayoutManager
     JLabel label = new JLabel("Enter Name");
     JTextField textField = new JTextField(16);
     JButton button = new JButton("Submit");
-    panel1.add(label);
-    panel1.add(textField);
-    panel1.add(button);
-    panel1.setBorder(BorderFactory.createTitledBorder("hello"));
+    bottomPane.add(label);
+    bottomPane.add(textField);
+    bottomPane.add(button);
+    bottomPane.setBorder(BorderFactory.createTitledBorder("hello"));
 
-    JPanel panel2 = new JPanel(new BorderLayout());
-    panel2.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+    JPanel messagePane = new JPanel(new BorderLayout());
+    messagePane.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
     JTextArea textArea = new JTextArea();
     textArea.setBorder(BorderFactory.createLineBorder(Color.MAGENTA, 1));
-    panel2.add(textArea, BorderLayout.CENTER);
+    messagePane.add(textArea, BorderLayout.CENTER);
 
     MyDrawing myDrawing = new MyDrawing();
     // Default LayoutManager for content pane is BorderLayoutManager
-    frame.getContentPane().add(panel2, BorderLayout.CENTER);
-    frame.getContentPane().add(panel1, BorderLayout.SOUTH);
-    frame.getContentPane().add(myDrawing, BorderLayout.EAST);
+    frame.getContentPane().add(messagePane, BorderLayout.CENTER);
+    frame.getContentPane().add(myDrawing, BorderLayout.LINE_END);
+    frame.getContentPane().add(bottomPane, BorderLayout.PAGE_END);
 
     button.addActionListener(e -> textArea.append(textField.getText() + "\n"));
 
